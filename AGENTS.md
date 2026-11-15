@@ -53,3 +53,4 @@ Conventional Commits: `fix:` (patch), `feat:` (minor), `feat!:` or `BREAKING CHA
 - **Gateway API CRDs come first, in the release that the Cilium version documents** (Cilium 1.20: v1.6.3, not the latest). Cilium does not install them.
 - A `helm uninstall` of Cilium leaves its generated secrets (`cilium-ca`, `hubble-*-certs`): delete them before a new install.
 - A mock provider cannot see what Helm or Argo CD does. After a change, run the module on a test cluster: nodes Ready, Argo CD running, the root Application reaches the repository.
+- **Never put `depends_on` on a call to this module.** It defers the download of the Gateway API CRDs to apply time, and the `for_each` over the CRDs then fails at plan for a new cluster. The providers already read the kubeconfig of the cluster, so Terraform creates the cluster first. The tests of the live repository found this.

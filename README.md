@@ -18,7 +18,7 @@ module "platform" {
 
   root = { repo_url = "https://github.com/itlinuxfr/platform.git", path = "clusters/demo" }
 
-  depends_on = [module.cluster]
+  # No depends_on on this module: the providers read the kubeconfig of the cluster, which orders the creation.
 }
 ```
 
@@ -32,6 +32,8 @@ The caller configures the `helm`, `kubernetes` and `kubectl` providers from the 
 5. **The root Application** (app of apps), without finalizer: deleting it never deletes the applications it created, Cilium included.
 
 The two Helm releases ignore every later change. Argo CD manages Cilium and itself from the Git repository, with the same chart versions: change a version or a value there, never here.
+
+Do not add `depends_on` to the module call: it defers the download of the CRDs to apply time, and the plan of a new cluster fails (`for_each` over a value known only after apply). The providers read the kubeconfig of the cluster, which already orders the creation.
 
 See the [`examples/`](examples/) directory for complete examples.
 
