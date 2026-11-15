@@ -4,7 +4,8 @@
 # The relative source is used by CI: it tests the code of the current branch.
 #
 # The cluster must exist and answer. With cni = "none" its nodes stay NotReady until Cilium is installed: this module installs it.
-# Configure the three providers from the kubeconfig of the cluster (the example reads a file; a live repository can read the output of the cluster module).
+# Run this in its own Terraform root, once the cluster exists: the kubectl provider cannot be configured from a cluster that does not exist yet.
+# Configure the three providers from the kubeconfig file of the cluster.
 
 terraform {
   required_version = ">= 1.15"
