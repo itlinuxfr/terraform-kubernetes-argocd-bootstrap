@@ -72,7 +72,7 @@ run "everything" {
   }
 
   assert {
-    condition     = yamldecode(helm_release.cilium[0].values[0]).kubeProxyReplacement == true && yamldecode(helm_release.cilium[0].values[0]).k8sServicePort == 7445
+    condition     = yamldecode(helm_release.cilium[0].values[0]).kubeProxyReplacement == true && yamldecode(helm_release.cilium[0].values[0]).k8sServicePort == 7445 && !can(yamldecode(helm_release.cilium[0].values[0]).gatewayAPI)
     error_message = "The Talos values must replace kube-proxy and use KubePrism."
   }
 
@@ -153,4 +153,47 @@ run "gateway_api_channel_is_checked" {
   }
 
   expect_failures = [var.gateway_api]
+}
+
+# Enabling the Gateway API later on a running Cilium leaves the agents NotReady until the operator restarts, and the taint agent-not-ready
+# then blocks every new pod. The CRDs come first, so Cilium must start with the Gateway API on.
+run "cilium_starts_with_the_gateway_api_when_the_crds_are_installed" {
+  command = plan
+
+  variables {
+    gateway_api = { version = "v1.6.3" }
+    cilium      = { version = "1.20.4" }
+  }
+
+  assert {
+    condition     = length(helm_release.cilium[0].values) == 2 && yamldecode(helm_release.cilium[0].values[1]).gatewayAPI.enabled == true
+    error_message = "With the Gateway API CRDs, Cilium must start with gatewayAPI.enabled = true, after the Talos values."
+  }
+}
+
+run "caller_values_have_the_last_word_on_the_gateway_api" {
+  command = plan
+
+  variables {
+    gateway_api = { version = "v1.6.3" }
+    cilium      = { version = "1.20.4", values = ["gatewayAPI:\n  enabled: false\n"] }
+  }
+
+  assert {
+    condition     = yamldecode(helm_release.cilium[0].values[2]).gatewayAPI.enabled == false
+    error_message = "The values of the caller must come after the Gateway API values."
+  }
+}
+
+run "cilium_without_the_crds_has_no_gateway_api" {
+  command = plan
+
+  variables {
+    cilium = { version = "1.20.4", talos = false }
+  }
+
+  assert {
+    condition     = length(helm_release.cilium[0].values) == 0
+    error_message = "Without the Gateway API CRDs and without Talos values, Cilium must get no value from the module."
+  }
 }

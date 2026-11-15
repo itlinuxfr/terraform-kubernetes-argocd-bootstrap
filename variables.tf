@@ -27,7 +27,7 @@ variable "gateway_api" {
 variable "cilium" {
   description = <<-EOT
     Installs Cilium (the CNI) once, because Argo CD cannot start without a network. Argo CD takes it over afterwards: give it the same chart version.
-    `talos` adds the values that Talos needs (kube-proxy replacement, KubePrism, cgroup). `values` are YAML documents merged after them.
+    `talos` adds the values that Talos needs (kube-proxy replacement, KubePrism, cgroup). With `gateway_api` set, Cilium starts with the Gateway API on. `values` are YAML documents merged after them.
     Set to null when the cluster already has a CNI.
   EOT
   type = object({

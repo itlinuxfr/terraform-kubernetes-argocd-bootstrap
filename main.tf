@@ -25,7 +25,11 @@ locals {
     }
   })
 
-  cilium_values = var.cilium == null ? [] : concat(var.cilium.talos ? [local.cilium_talos_values] : [], var.cilium.values)
+  # The Gateway API CRDs are installed before Cilium, so Cilium starts with the Gateway API on. Enabling it later on a running Cilium
+  # leaves the agents NotReady until the operator restarts, and the node taint agent-not-ready then blocks every new pod, Argo CD's included.
+  cilium_gateway_values = var.gateway_api == null ? [] : [yamlencode({ gatewayAPI = { enabled = true } })]
+
+  cilium_values = var.cilium == null ? [] : concat(var.cilium.talos ? [local.cilium_talos_values] : [], local.cilium_gateway_values, var.cilium.values)
 
   # Created after the Argo CD release: the chart installs the Application CRD, and Helm validates every object before it installs anything,
   # so the Application cannot travel in the chart values (extraObjects).
