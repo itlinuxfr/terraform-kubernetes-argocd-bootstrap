@@ -18,7 +18,7 @@ module "platform" {
 
   root = { repo_url = "https://github.com/itlinuxfr/platform.git", path = "clusters/demo" }
 
-  # No depends_on on this module: the providers read the kubeconfig of the cluster, which orders the creation.
+  # No depends_on: run this in its own root, after the cluster exists (see below).
 }
 ```
 
@@ -33,7 +33,7 @@ The caller configures the `helm`, `kubernetes` and `kubectl` providers from the 
 
 The two Helm releases ignore every later change. Argo CD manages Cilium and itself from the Git repository, with the same chart versions: change a version or a value there, never here.
 
-Do not add `depends_on` to the module call: it defers the download of the CRDs to apply time, and the plan of a new cluster fails (`for_each` over a value known only after apply). The providers read the kubeconfig of the cluster, which already orders the creation.
+Call the module from its own Terraform root, once the cluster exists and answers, with the providers reading its kubeconfig file (see [`examples/talos`](examples/talos/)). A single root that also creates the cluster fails to plan: the kubectl provider cannot be configured from a cluster that does not exist yet. Do not add `depends_on` to the module call either: it defers the download of the CRDs to apply time, and `for_each` over a value known only after apply fails.
 
 See the [`examples/`](examples/) directory for complete examples.
 
